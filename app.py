@@ -102,20 +102,27 @@ user_inputs = {}
 blanks_count = 0
 
 with st.form(key=f"question_form_{st.session_state.index}"):
-    for i in range(1, 4):
+    for i in range(1, 6):
         ja_col = f"日本語{i}"
         la_col = f"ラテン語{i}"
         
         if current_q.get(ja_col) != "":
             blanks_count += 1
             st.markdown(f"**【空欄 {i}】**")
-            col1, col2 = st.columns(2)
-            with col1:
-                # autocomplete="off" と、keyへの問題番号の付与でリセット機能を確実にする
+            
+            # ラテン語のデータがある場合のみ、2列（横並び）で表示する
+            if current_q.get(la_col) != "":
+                col1, col2 = st.columns(2)
+                with col1:
+                    user_inputs[f"ja_{i}"] = st.text_input("日本語:", key=f"ja_{st.session_state.index}_{i}", autocomplete="off")
+                with col2:
+                    user_inputs[f"la_{i}"] = st.text_input("ラテン語:", key=f"la_{st.session_state.index}_{i}", autocomplete="off")
+            
+            # ラテン語のデータがない（空欄）場合は、日本語のみを1列で表示する
+            else:
                 user_inputs[f"ja_{i}"] = st.text_input("日本語:", key=f"ja_{st.session_state.index}_{i}", autocomplete="off")
-            with col2:
-                # autocomplete="off" と、keyへの問題番号の付与でリセット機能を確実にする
-                user_inputs[f"la_{i}"] = st.text_input("ラテン語:", key=f"la_{st.session_state.index}_{i}", autocomplete="off")
+                user_inputs[f"la_{i}"] = ""  # 採点エラーを防ぐための空文字
+                
             st.divider()
             
     submit_btn = st.form_submit_button("採点する")
@@ -126,39 +133,49 @@ if submit_btn and not st.session_state.answered:
     
     details = []  # 表を作るためのリスト
     
-    for i in range(1, blanks_count + 1):
-        correct_ja = str(current_q[f"日本語{i}"]).strip()
-        correct_la = str(current_q[f"ラテン語{i}"]).strip()
+    for i in range(1, 6):
+        ja_col = f"日本語{i}"
+        la_col = f"ラテン語{i}"
         
-        user_ja = user_inputs[f"ja_{i}"].strip()
-        user_la = user_inputs[f"la_{i}"].strip()
-        
-        st.markdown(f"#### 【空欄 {i} の結果】")
-        
-        if user_ja == correct_ja:
-            st.success(f"✅ 日本語: 正解！")
-            st.session_state.score_ja += 1
-            res_ja = f"✅ {correct_ja}"
-        else:
-            st.error(f"❌ 日本語: 不正解 (回答: {user_ja} ➔ **正解: {correct_ja}**)")
-            res_ja = f"❌ {correct_ja}"
+        if current_q.get(ja_col) != "":
+            correct_ja = str(current_q[ja_col]).strip()
+            correct_la = str(current_q[la_col]).strip()
             
-        if user_la == correct_la:
-            st.success(f"✅ ラテン語: 正解！")
-            st.session_state.score_la += 1
-            res_la = f"✅ {correct_la}"
-        else:
-            st.error(f"❌ ラテン語: 不正解 (回答: {user_la} ➔ **正解: {correct_la}**)")
-            res_la = f"❌ {correct_la}"
+            user_ja = user_inputs[f"ja_{i}"].strip()
             
-        st.session_state.total_blanks += 1
-        
-        # 空欄ごとの結果をまとめてリストに追加
-        details.append({
-            "空欄": f"[{i}]",
-            "日本語": res_ja,
-            "ラテン語": res_la
-        })
+            st.markdown(f"#### 【空欄 {i} の結果】")
+            
+            # --- 日本語の採点 ---
+            if user_ja == correct_ja:
+                st.success(f"✅ 日本語: 正解！")
+                st.session_state.score_ja += 1
+                res_ja = f"✅ {correct_ja}"
+            else:
+                st.error(f"❌ 日本語: 不正解 (回答: {user_ja} ➔ **正解: {correct_ja}**)")
+                res_ja = f"❌ {correct_ja}"
+            
+            st.session_state.total_blanks += 1
+            
+            # --- ラテン語の採点（データがある場合のみ実行） ---
+            if correct_la != "":
+                user_la = user_inputs[f"la_{i}"].strip()
+                if user_la == correct_la:
+                    st.success(f"✅ ラテン語: 正解！")
+                    st.session_state.score_la += 1
+                    res_la = f"✅ {correct_la}"
+                else:
+                    st.error(f"❌ ラテン語: 不正解 (回答: {user_la} ➔ **正解: {correct_la}**)")
+                    res_la = f"❌ {correct_la}"
+                st.session_state.total_blanks += 1
+            else:
+                res_la = "ー (なし)"  # 復習リストの表に表示する用
+            
+            # 空欄ごとの結果をまとめてリストに追加
+            details.append({
+                "空欄": f"[{i}]",
+                "日本語": res_ja,
+                "ラテン語": res_la
+            })
 
     record = {
         "問題": current_q['問題文'],
