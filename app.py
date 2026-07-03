@@ -47,7 +47,8 @@ if ('current_chapters' not in st.session_state or
     st.session_state.index = 0
     st.session_state.score_ja = 0
     st.session_state.score_la = 0
-    st.session_state.total_blanks = 0
+    st.session_state.total_ja_blanks = 0
+    st.session_state.total_la_blanks = 0
     st.session_state.history = []
     
     # 画面切り替え用のフラグ
@@ -72,8 +73,8 @@ if st.session_state.index >= len(chapter_df):
     st.title(f"🎉 {selected_names} 完了！")
     
     st.write("### 最終スコア")
-    st.write(f"- **日本語:** {st.session_state.score_ja} / {st.session_state.total_blanks} 正解")
-    st.write(f"- **ラテン語:** {st.session_state.score_la} / {st.session_state.total_blanks} 正解")
+    st.write(f"- **日本語:** {st.session_state.score_ja} / {st.session_state.total_ja_blanks} 正解")
+    st.write(f"- **ラテン語:** {st.session_state.score_la} / {st.session_state.total_la_blanks} 正解")
     
     st.write("---")
     st.write("### 📝 復習リスト")
@@ -90,7 +91,8 @@ if st.session_state.index >= len(chapter_df):
         st.session_state.index = 0
         st.session_state.score_ja = 0
         st.session_state.score_la = 0
-        st.session_state.total_blanks = 0
+        st.session_state.total_ja_blanks = 0
+        st.session_state.total_la_blanks = 0
         st.session_state.history = []
         st.session_state.answered = False
         st.session_state.scored_this_turn = False
@@ -199,7 +201,7 @@ else:
                     res_ja = f"❌ {correct_ja}"
                 
                 if not st.session_state.get('scored_this_turn', False):
-                    st.session_state.total_blanks += 1
+                    st.session_state.total_ja_blanks += 1
             else:
                 res_ja = "ー (なし)"
 
@@ -218,7 +220,7 @@ else:
                     res_la = f"❌ {correct_la}"
                 
                 if not st.session_state.get('scored_this_turn', False):
-                    st.session_state.total_blanks += 1
+                    st.session_state.total_la_blanks += 1
             else:
                 res_la = "ー (なし)"
             
