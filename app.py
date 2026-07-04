@@ -122,39 +122,41 @@ user_inputs = {}
 # ==========================================
 if not st.session_state.answered:
     with st.form(key=f"question_form_{st.session_state.index}"):
-        for i in range(1, 6):
-            ja_col = f"日本語{i}"
-            la_col = f"ラテン語{i}"
-            
-            ja_val = current_q.get(ja_col, "")
-            la_val = current_q.get(la_col, "")
-            
-            # 日本語かラテン語、どちらか一方でもデータが存在するかチェック
-            has_ja = pd.notna(ja_val) and str(ja_val).strip() != ""
-            has_la = pd.notna(la_val) and str(la_val).strip() != ""
-            
-            if has_ja or has_la:
-                st.markdown(f"**【空欄 {i}】**")
+
+        with st.container(height=250):
+            for i in range(1, 7):
+                ja_col = f"日本語{i}"
+                la_col = f"ラテン語{i}"
                 
-                # 両方ある場合は2列
-                if has_ja and has_la:
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        user_inputs[f"ja_{i}"] = st.text_input("日本語:", key=f"ja_{st.session_state.index}_{i}", autocomplete="off")
-                    with col2:
-                        user_inputs[f"la_{i}"] = st.text_input("ラテン語:", key=f"la_{st.session_state.index}_{i}", autocomplete="off")
+                ja_val = current_q.get(ja_col, "")
+                la_val = current_q.get(la_col, "")
                 
-                # 日本語だけの場合は1列
-                elif has_ja:
-                    user_inputs[f"ja_{i}"] = st.text_input("日本語:", key=f"ja_{st.session_state.index}_{i}", autocomplete="off")
-                    user_inputs[f"la_{i}"] = ""  # エラー防止用
+                # 日本語かラテン語、どちらか一方でもデータが存在するかチェック
+                has_ja = pd.notna(ja_val) and str(ja_val).strip() != ""
+                has_la = pd.notna(la_val) and str(la_val).strip() != ""
                 
-                # ラテン語だけの場合は1列
-                elif has_la:
-                    user_inputs[f"ja_{i}"] = ""  # エラー防止用
-                    user_inputs[f"la_{i}"] = st.text_input("ラテン語:", key=f"la_{st.session_state.index}_{i}", autocomplete="off")
+                if has_ja or has_la:
+                    st.markdown(f"**【空欄 {i}】**")
                     
-                st.divider()
+                    # 両方ある場合は2列
+                    if has_ja and has_la:
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            user_inputs[f"ja_{i}"] = st.text_input("日本語:", key=f"ja_{st.session_state.index}_{i}", autocomplete="off")
+                        with col2:
+                            user_inputs[f"la_{i}"] = st.text_input("ラテン語:", key=f"la_{st.session_state.index}_{i}", autocomplete="off")
+                    
+                    # 日本語だけの場合は1列
+                    elif has_ja:
+                        user_inputs[f"ja_{i}"] = st.text_input("日本語:", key=f"ja_{st.session_state.index}_{i}", autocomplete="off")
+                        user_inputs[f"la_{i}"] = ""  # エラー防止用
+                    
+                    # ラテン語だけの場合は1列
+                    elif has_la:
+                        user_inputs[f"ja_{i}"] = ""  # エラー防止用
+                        user_inputs[f"la_{i}"] = st.text_input("ラテン語:", key=f"la_{st.session_state.index}_{i}", autocomplete="off")
+                        
+                    st.divider()
                 
         # ボタンを押すと画面全体がリロード(rerun)され、下の「採点済み」ブロックへ移行する
         submit_btn = st.form_submit_button("採点する", type="primary")
@@ -172,65 +174,66 @@ else:
     
     st.write("### 📝 採点結果")
     
-    for i in range(1, 6):
-        ja_col = f"日本語{i}"
-        la_col = f"ラテン語{i}"
-        
-        ja_val = current_q.get(ja_col, "")
-        la_val = current_q.get(la_col, "")
-        
-        has_ja = pd.notna(ja_val) and str(ja_val).strip() != ""
-        has_la = pd.notna(la_val) and str(la_val).strip() != ""
-        
-        if has_ja or has_la:
-            st.markdown(f"#### 【空欄 {i}】")
+    with st.container(height=250):
+        for i in range(1, 7):
+            ja_col = f"日本語{i}"
+            la_col = f"ラテン語{i}"
             
-            # --- 日本語の採点 ---
-            if has_ja:
-                correct_ja = str(ja_val).strip()
-                user_ja = saved_inputs.get(f"ja_{i}", "").strip()
+            ja_val = current_q.get(ja_col, "")
+            la_val = current_q.get(la_col, "")
+            
+            has_ja = pd.notna(ja_val) and str(ja_val).strip() != ""
+            has_la = pd.notna(la_val) and str(la_val).strip() != ""
+            
+            if has_ja or has_la:
+                st.markdown(f"#### 【空欄 {i}】")
                 
-                if user_ja == correct_ja:
-                    st.success(f"✅ 日本語: 正解！ 【 {correct_ja} 】")
-                    # ページリロードによるスコアの二重加算を防ぐ
+                # --- 日本語の採点 ---
+                if has_ja:
+                    correct_ja = str(ja_val).strip()
+                    user_ja = saved_inputs.get(f"ja_{i}", "").strip()
+                    
+                    if user_ja == correct_ja:
+                        st.success(f"✅ 日本語: 正解！ 【 {correct_ja} 】")
+                        # ページリロードによるスコアの二重加算を防ぐ
+                        if not st.session_state.get('scored_this_turn', False):
+                            st.session_state.score_ja += 1
+                        res_ja = f"✅ {correct_ja}"
+                    else:
+                        st.error(f"❌ 日本語: 不正解 (回答: {user_ja} ➔ **正解: {correct_ja}**)")
+                        res_ja = f"❌ {correct_ja}"
+                    
                     if not st.session_state.get('scored_this_turn', False):
-                        st.session_state.score_ja += 1
-                    res_ja = f"✅ {correct_ja}"
+                        st.session_state.total_ja_blanks += 1
                 else:
-                    st.error(f"❌ 日本語: 不正解 (回答: {user_ja} ➔ **正解: {correct_ja}**)")
-                    res_ja = f"❌ {correct_ja}"
-                
-                if not st.session_state.get('scored_this_turn', False):
-                    st.session_state.total_ja_blanks += 1
-            else:
-                res_ja = "ー (なし)"
+                    res_ja = "ー (なし)"
 
-            # --- ラテン語の採点 ---
-            if has_la:
-                correct_la = str(la_val).strip()
-                user_la = saved_inputs.get(f"la_{i}", "").strip()
-                
-                if user_la == correct_la:
-                    st.success(f"✅ ラテン語: 正解！ 【 {correct_la} 】")
+                # --- ラテン語の採点 ---
+                if has_la:
+                    correct_la = str(la_val).strip()
+                    user_la = saved_inputs.get(f"la_{i}", "").strip()
+                    
+                    if user_la == correct_la:
+                        st.success(f"✅ ラテン語: 正解！ 【 {correct_la} 】")
+                        if not st.session_state.get('scored_this_turn', False):
+                            st.session_state.score_la += 1
+                        res_la = f"✅ {correct_la}"
+                    else:
+                        st.error(f"❌ ラテン語: 不正解 (回答: {user_la} ➔ **正解: {correct_la}**)")
+                        res_la = f"❌ {correct_la}"
+                    
                     if not st.session_state.get('scored_this_turn', False):
-                        st.session_state.score_la += 1
-                    res_la = f"✅ {correct_la}"
+                        st.session_state.total_la_blanks += 1
                 else:
-                    st.error(f"❌ ラテン語: 不正解 (回答: {user_la} ➔ **正解: {correct_la}**)")
-                    res_la = f"❌ {correct_la}"
+                    res_la = "ー (なし)"
                 
-                if not st.session_state.get('scored_this_turn', False):
-                    st.session_state.total_la_blanks += 1
-            else:
-                res_la = "ー (なし)"
-            
-            # 復習リスト用のデータを追加
-            details.append({
-                "空欄": f"[{i}]",
-                "日本語": res_ja,
-                "ラテン語": res_la
-            })
-            st.divider()
+                # 復習リスト用のデータを追加
+                details.append({
+                    "空欄": f"[{i}]",
+                    "日本語": res_ja,
+                    "ラテン語": res_la
+                })
+                st.divider()
 
     # 履歴への保存（1問につき1回だけ記録する）
     if not st.session_state.get('scored_this_turn', False):
